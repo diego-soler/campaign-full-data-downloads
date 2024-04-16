@@ -1,0 +1,11 @@
+# Ignore configuration files
+.campaign-downloads.yaml
+.campaign-downloads-development.yaml
+
+# Downloaded Excel Files
+downloaded-files
+downloaded-files-prod-v1
+*.zip
+
+# Executable file
+campaign-downloads

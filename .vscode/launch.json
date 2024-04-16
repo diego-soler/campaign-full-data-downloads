@@ -1,0 +1,48 @@
+{
+  // Use IntelliSense to learn about possible attributes.
+  // Hover to view descriptions of existing attributes.
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "downloadFiles (production)",
+      "type": "go",
+      "request": "launch",
+      "mode": "auto",
+      "program": "${workspaceFolder}/main.go",
+      "args": ["downloadFiles", "--config", "${workspaceFolder}/.campaign-downloads.yaml"],
+      "env": {
+        "GO_ENV": "production"
+      }
+    },
+    {
+      "name": "downloadFiles from v2 (production)",
+      "type": "go",
+      "request": "launch",
+      "mode": "auto",
+      "program": "${workspaceFolder}/main.go",
+      "args": ["downloadFiles", "--config", "${workspaceFolder}/.campaign-downloads.yaml", "--v2"],
+      "env": {
+        "GO_ENV": "production"
+      }
+    },
+    {
+      "name": "downloadFiles (development)",
+      "type": "go",
+      "request": "launch",
+      "mode": "auto",
+      "program": "${workspaceFolder}/main.go",
+      "args": ["downloadFiles", "--config", "${workspaceFolder}/.campaign-downloads-development.yaml"],
+      "env": {
+        "GO_ENV": "development"
+      }
+    },
+    {
+      "name": "Launch Package",
+      "type": "go",
+      "request": "launch",
+      "mode": "auto",
+      "program": "${fileDirname}"
+    }
+  ]
+}

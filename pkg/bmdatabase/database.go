@@ -63,7 +63,7 @@ func GetCampaigns(campaignStatusId int64) ([]BmCampaign, error) {
 		}
 	}
 
-	rows, err := db.Query("SELECT idcampaign, idcampaignstatus, version FROM campaign WHERE idcampaignstatus = ?", campaignStatusId)
+	rows, err := db.Query("SELECT idcampaign, idcampaignstatus, version, IF(advertiser IS NULL, 'no_advertiser', advertiser) as advertiser FROM campaign as c LEFT JOIN advertiser AS a ON c.idadvertiser = a.idadvertiser WHERE idcampaignstatus = ?", campaignStatusId)
 	if err != nil {
 		return nil, err
 	}
@@ -74,7 +74,8 @@ func GetCampaigns(campaignStatusId int64) ([]BmCampaign, error) {
 		var idcampaign int64
 		var idcampaignstatus int64
 		var versionStr string
-		err := rows.Scan(&idcampaign, &idcampaignstatus, &versionStr)
+		var advertiser string
+		err := rows.Scan(&idcampaign, &idcampaignstatus, &versionStr, &advertiser)
 		if err != nil {
 			return nil, fmt.Errorf("error in campaign id: %d: %w", idcampaign, err)
 		}
@@ -88,6 +89,7 @@ func GetCampaigns(campaignStatusId int64) ([]BmCampaign, error) {
 				IdCampaign:       idcampaign,
 				IdCampaignStatus: idcampaignstatus,
 				Version:          version,
+				AdvertiserName:   advertiser,
 			},
 		)
 	}

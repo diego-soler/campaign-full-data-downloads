@@ -9,3 +9,6 @@ downloaded-files-prod-v1
 
 # Executable file
 campaign-downloads
+
+log.txt
+errors.txt

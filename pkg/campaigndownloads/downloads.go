@@ -9,6 +9,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/kennygrant/sanitize"
 	"github.com/spf13/viper"
 )
 
@@ -57,8 +58,14 @@ func DownloadFile(campaign *bmdatabase.BmCampaign, adminToken string, plannerTok
 	}
 	defer resp.Body.Close()
 
+	// Create a variable with the value of campaign.AdvertiserName but replacing the blank spaces by underscores
+	var advertiserName string
+	advertiserName = strings.ReplaceAll(campaign.AdvertiserName, " ", "_")
+	// Remove any special character from the advertiser name
+	advertiserName = sanitize.BaseName(advertiserName)
+
 	// Create the output file name
-	fileName := fmt.Sprintf("downloaded-files/campaign_%d-%s.xlsx", campaign.IdCampaign, version)
+	fileName := fmt.Sprintf("downloaded-files/%s_campaign_%d-%s.xlsx", advertiserName, campaign.IdCampaign, version)
 
 	// Create a new HTTP client. This is necessary because we need to send a new request with the cookies from the previous response
 	client := &http.Client{}

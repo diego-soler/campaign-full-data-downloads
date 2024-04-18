@@ -1,0 +1,10 @@
+GO_ENV: production
+
+# PROD MySQL Access credentials
+MYSQL_USER: "pepe.argento"
+MYSQL_PASSWORD: "Racing Club"
+# MySQL Network settings
+MYSQL_NET: "tcp"
+MYSQL_ADDR: "pepeserver.casadosconhijos.com.ar:3306"
+# MySQL database name
+MYSQL_DBNAME: "pepe_db"

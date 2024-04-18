@@ -20,6 +20,8 @@ import (
 	"campaign-downloads/pkg/bmdatabase"
 	"campaign-downloads/pkg/campaigndownloads"
 	"os"
+	"runtime"
+	"sync"
 
 	"fmt"
 
@@ -51,7 +53,7 @@ to quickly create a Cobra application.`,
 		v1Flag, _ := cmd.Flags().GetBool("v1")
 		v2Flag, _ := cmd.Flags().GetBool("v2")
 
-		if v1Flag == false && v2Flag == false {
+		if !v1Flag && !v2Flag {
 			v1Flag = true
 			v2Flag = true
 		}
@@ -64,33 +66,69 @@ to quickly create a Cobra application.`,
 			panic(err)
 		}
 
-		for _, campaign := range campaigns {
+		jobChannel := make(chan campaigndownloads.CampaignDownloadJob)
+		var wg sync.WaitGroup
+		stdOutput := make(chan string)
+		stdError := make(chan string)
+		numWorkers := runtime.NumCPU() / 2
 
-			version := campaigndownloads.PlatformVersion(&campaign)
+		// Add the number of worker goroutines to the wait group
+		wg.Add(numWorkers)
 
-			if (version == "v1" && !v1Flag) || (version == "v2" && !v2Flag) {
-				continue
-			}
-
-			user, err := bmdatabase.GetUser(userEmail)
-			if err != nil {
-				panic(err)
-			}
-			plannerToken, err := bmdatabase.GetCampaignPlannerToken(campaign.IdCampaign)
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "Error getting planner token for campaign %d\n", campaign.IdCampaign)
-				continue
-			}
-
-			fmt.Printf("Downloading campaign %d...\n", campaign.IdCampaign)
-
-			err1 := campaigndownloads.DownloadFile(&campaign, user.Token, plannerToken)
-			if err1 != nil {
-				fmt.Fprintln(os.Stderr, err1)
-				continue
-			}
-			fmt.Printf("Campaign %d downloaded successfully\n", campaign.IdCampaign)
+		// Launch worker goroutines
+		for i := 0; i < numWorkers; i++ {
+			go campaigndownloads.DownloadWorker(jobChannel, stdOutput, stdError, &wg)
 		}
+		// Send the jobs to the worker goroutines
+		go func() {
+			fmt.Println("Starting to send jobs to workers")
+			for i, campaign := range campaigns {
+				version := campaigndownloads.PlatformVersion(&campaign)
+
+				if (version == "v1" && !v1Flag) || (version == "v2" && !v2Flag) {
+					continue
+				}
+
+				user, err := bmdatabase.GetUser(userEmail)
+				if err != nil {
+					panic(err)
+				}
+				plannerToken, err := bmdatabase.GetCampaignPlannerToken(campaign.IdCampaign)
+				if err != nil {
+					fmt.Fprintf(os.Stderr, "Error getting planner token for campaign %d\n", campaign.IdCampaign)
+					continue
+				}
+				var job campaigndownloads.CampaignDownloadJob = campaigndownloads.CampaignDownloadJob{
+					Campaign:     campaign,
+					UserToken:    user.Token,
+					PlannerToken: plannerToken,
+				}
+				fmt.Printf("Sending job to worker %d\n", i)
+				jobChannel <- job
+				fmt.Printf("Job sent %d by the channel\n", i)
+			}
+			close(jobChannel)
+
+		}()
+
+		go func() {
+			for output := range stdOutput {
+				fmt.Print(output)
+			}
+		}()
+		go func() {
+			for output := range stdError {
+				fmt.Print(output)
+			}
+		}()
+
+		// Wait for all worker goroutines to finish
+		wg.Wait()
+		// Close the output channels
+		close(stdOutput)
+		close(stdError)
+
+		fmt.Println("All workers finished")
 	},
 }
 
